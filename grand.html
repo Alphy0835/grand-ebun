@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>& ГРАНД ЕБУН</title>
+    <style>
+        /* Общие стили для всего документа */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Стили для шапки (header) */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .logo {
+            font-size: 2.5em;
+        }
+
+        .logo-container {
+            width: 11em; 
+            height: 11em;
+            transform: translateY(-2px);
+        }
+
+        .logo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+       
+        /* Стили для инструкции */
+        .instructions {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .instructions p {
+            margin: 0;
+            color: #555;
+            font-style: italic;
+        }
+
+        /* Сетка для кнопок */
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Стили для каждой кнопки-возражения */
+        .objection-button {
+            background-color: #fff;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .objection-button:hover {
+            border-color: #007bff;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Заголовок кнопки */
+        .objection-title {
+            pointer-events: none;
+            font-weight: bold;
+        }
+
+        /* Контейнер для отработки, который появляется при клике */
+        .objection-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .objection-button.active .objection-body {
+            max-height: 500px;
+            padding-top: 15px;
+        }
+
+        .objection-text {
+            white-space: pre-wrap;
+            text-align: left;
+            margin-bottom: 15px;
+            font-style: normal;
+        }
+
+        /* Навигация для нескольких отработок */
+        .objection-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.5em;
+            color: #007bff;
+        }
+
+        .objection-nav-btn {
+            cursor: pointer;
+            user-select: none;
+            padding: 5px;
+            transition: color 0.2s ease;
+        }
+
+        .objection-nav-btn:hover {
+            color: #0056b3;
+        }
+
+        .nav-counter {
+            font-size: 0.8em;
+            color: #777;
+        }
+
+        /* НОВЫЙ СТИЛЬ ДЛЯ РАЗДЕЛИТЕЛЯ */
+        .separator-style {
+            grid-column: 1 / -1; /* Заставляет элемент занимать всю ширину сетки */
+        }
+
+        /* Медиа-запросы для адаптивности */
+        @media (max-width: 1000px) {
+            .buttons-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            .instructions {
+                font-size: 0.9em;
+            }
+            .buttons-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo-container">
+            <img src="logo_twin-03.png" alt="Логотип Twin" class="logo-image">
+        </div>
+        <h1>& ГРАНД ЕБУН</h1>
+    </header>
+
+    <div class="instructions">
+        <p>Чтобы увидеть отработку, нажми на нужное возражение и выбери один из вариантов отработки.</p>
+    </div>
+
+    <main class="buttons-grid" id="buttons-grid"></main>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+
+    <script>
+        // === КОНФИГУРАЦИЯ GOOGLE SHEETS API ===
+        const API_KEY = 'AIzaSyCTNSHHusInzqyA8UdaudDfIqS1hSO9DmY';
+        const SPREADSHEET_ID = '1GRO2CT5SWiuuK3kRU-b5YeF3Al5MiCsIpOUDTv1ytO8';
+        const RANGE = 'Sheet1!A:Z';
+
+        // === ОСНОВНАЯ ЛОГИКА САЙТА ===
+        document.addEventListener('DOMContentLoaded', () => {
+            gapi.load('client', initClient);
+        });
+
+        function initClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+            }).then(() => {
+                console.log('Google API client initialized successfully.');
+                fetchData();
+            }, (error) => {
+                console.error('Error initializing Google API client:', error);
+                alert('Не удалось подключиться к Google API. Проверьте API Key и настройки.');
+            });
+        }
+
+        function fetchData() {
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: SPREADSHEET_ID,
+                range: RANGE,
+            }).then((response) => {
+                const data = response.result.values;
+                if (!data || data.length === 0) {
+                    console.log('No data found.');
+                    return;
+                }
+                const objectionsData = data.slice(1);
+                createObjectionButtons(objectionsData);
+            }, (error) => {
+                console.error('Error fetching data from Google Sheets:', error);
+                alert('Не удалось загрузить данные из таблицы. Проверьте ID таблицы и права доступа.');
+            });
+        }
+
+        /**
+         * Динамически создает кнопки возражений.
+         * @param {Array<Array<string>>} data Массив строк из таблицы.
+         */
+        function createObjectionButtons(data) {
+            const gridContainer = document.getElementById('buttons-grid');
+            gridContainer.innerHTML = '';
+
+            data.forEach(row => {
+                const title = row[0];
+                
+                // === НОВАЯ ЛОГИКА ДЛЯ ОТОБРАЖЕНИЯ РАЗДЕЛИТЕЛЯ ===
+                if (title && title.trim() === 'То что ниже для хард закрытий') {
+                    const separator = document.createElement('div');
+                    separator.className = 'instructions separator-style'; // Используем существующий стиль + новый для сетки
+                    
+                    const p = document.createElement('p');
+                    p.textContent = title;
+                    
+                    separator.appendChild(p);
+                    gridContainer.appendChild(separator);
+                    return; // Пропускаем создание кнопки и переходим к следующей строке
+                }
+                // === КОНЕЦ НОВОЙ ЛОГИКИ ===
+
+                const rebuttals = row.slice(1).filter(text => text && text.trim() !== '');
+
+                if (!title || rebuttals.length === 0) {
+                    return;
+                }
+
+                const button = document.createElement('div');
+                button.className = 'objection-button';
+
+                const titleElement = document.createElement('div');
+                titleElement.className = 'objection-title';
+                titleElement.textContent = title;
+                button.appendChild(titleElement);
+               
+                const bodyElement = document.createElement('div');
+                bodyElement.className = 'objection-body';
+               
+                let currentRebuttalIndex = 0;
+
+                function updateRebuttalDisplay(index) {
+                    if (rebuttals.length === 1) {
+                        bodyElement.innerHTML = `<div class="objection-text">${rebuttals[0]}</div>`;
+                        return;
+                    }
+
+                    const rebuttalText = rebuttals[index];
+                    const navHtml = `
+                        <div class="objection-navigation">
+                            <span class="objection-nav-btn prev-btn" data-dir="prev">&lt;</span>
+                            <span class="nav-counter">${index + 1} / ${rebuttals.length}</span>
+                            <span class="objection-nav-btn next-btn" data-dir="next">&gt;</span>
+                        </div>
+                        <div class="objection-text">${rebuttalText}</div>
+                    `;
+                    bodyElement.innerHTML = navHtml;
+                   
+                    bodyElement.querySelector('.objection-nav-btn[data-dir="prev"]').onclick = (e) => {
+                        e.stopPropagation();
+                        currentRebuttalIndex = (currentRebuttalIndex - 1 + rebuttals.length) % rebuttals.length;
+                        updateRebuttalDisplay(currentRebuttalIndex);
+                    };
+                   
+                    bodyElement.querySelector('.objection-nav-btn[data-dir="next"]').onclick = (e) => {
+                        e.stopPropagation();
+                        currentRebuttalIndex = (currentRebuttalIndex + 1) % rebuttals.length;
+                        updateRebuttalDisplay(currentRebuttalIndex);
+                    };
+                }
+
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.objection-button.active').forEach(activeButton => {
+                        if (activeButton !== button) {
+                            activeButton.classList.remove('active');
+                        }
+                    });
+
+                    button.classList.toggle('active');
+                   
+                    if (button.classList.contains('active')) {
+                        currentRebuttalIndex = 0;
+                        updateRebuttalDisplay(currentRebuttalIndex);
+                    }
+                });
+
+                button.appendChild(bodyElement);
+                gridContainer.appendChild(button);
+            });
+        }
+    </script>
+</body>
+</html>
